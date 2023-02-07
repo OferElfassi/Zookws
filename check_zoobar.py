@@ -20,7 +20,7 @@ def red(s):
     return '\033[1;31m%s\033[m' % s
 
 def log(*m):
-    print(" ".join(m), file=sys.stderr)
+    sys.stderr.write(" ".join(m) + '\n')
 
 def log_exit(*m):
     log(red("ERROR:"), *m)
