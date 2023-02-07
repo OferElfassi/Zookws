@@ -16,6 +16,10 @@ credits) between each other.
    ```sh
    ./zookd-exstack 8080
    ```
+4. Test the exploit-template.py script in another terminal window
+   ```sh
+   python ./exploit-template.py localhost 8080
+   ```
 
 ## Application layout and potential buffer overflows
 
@@ -25,4 +29,6 @@ credits) between each other.
     <img src="https://user-images.githubusercontent.com/13490629/217201420-d668b7d7-3817-4154-a7ff-98aa298a9ed6.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
     <img src="https://user-images.githubusercontent.com/13490629/217203457-8000f037-6039-4fdc-b827-4b6d61f8e67a.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
     <img src="https://user-images.githubusercontent.com/13490629/217203965-c89aa02a-2dc8-4831-9b69-5807c564be64.png" style="display: block;-webkit-user-select: none;margin: auto;">
-</div>
+</div><br/>
+
+![image](https://user-images.githubusercontent.com/13490629/217298168-6ed747f9-9a04-4285-9ed2-b43f75943940.png)
