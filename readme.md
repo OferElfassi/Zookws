@@ -12,13 +12,13 @@ credits) between each other.
    ```sh
    make all 
    ```
-3. Run the server on port 8080 
+3. Run the server (args: {port:8080})
    ```sh
    ./zookd-exstack 8080
    ```
-4. Test the exploit-template.py script in another terminal window
+4. Test the exploit-template.py script in another terminal window (args: host=localhost, port=8080, overflow=1200)
    ```sh
-   python ./exploit-template.py localhost 8080
+   python ./exploit-template.py localhost 8080 1200
    ```
 
 ## Application layout and potential buffer overflows
