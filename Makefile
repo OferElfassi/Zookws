@@ -6,7 +6,8 @@ PROGS   := zookd \
            zookd-exstack \
            zookd-nxstack \
            zookd-withssp \
-           shellcode.bin run-shellcode
+           shellcode.bin \
+           run-shellcode
 
 ifeq ($(wildcard /usr/bin/execstack),)
   ifneq ($(wildcard /usr/sbin/execstack),)
