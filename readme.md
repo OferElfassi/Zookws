@@ -1,34 +1,44 @@
-# 1.1 Finding Buffer Overflows
+# 1.2 Code Injection
 
-The **zookws** web server is running a simple python web application, **zoobar**, where users transfer "zoobars" (
-credits) between each other.
+The goal here is to injected code will unlink (remove) a sensitive file on the server, namely
+"grades.txt". using the *-exstack binaries, since they have an executable stack that
+makes it easier to inject code.
 
-### Installation and execution
-1. Using command line, navigate to the project directory
-   ```sh
-   cd ~/zookws/ 
-   ```
-2. Compile the code
-   ```sh
-   make all 
-   ```
-3. Run the server (args: {port:8080})
-   ```sh
-   ./zookd-exstack 8080
-   ```
-4. Test the exploit-template.py script in another terminal window (args: host=localhost, port=8080, overflow=1200)
-   ```sh
-   python ./exploit-template.py localhost 8080 1200
-   ```
+### Part 1 - Writing assembly code that unlinks a file (shellcode.S)
 
-## Application layout and potential buffer overflows
+Afterwards, compile the assembly code into a binary file (shellcode.bin)
 
-<div style="text-align:center;display:flex;flex-direction: column; width: 100%">
-    <img src="https://user-images.githubusercontent.com/13490629/217200886-83e8b9be-3508-4bea-9faf-97470a3ec877.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
-    <img src="https://user-images.githubusercontent.com/13490629/217201214-f8f4ccf9-11ef-4bc4-9b78-9960856a3608.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
-    <img src="https://user-images.githubusercontent.com/13490629/217201420-d668b7d7-3817-4154-a7ff-98aa298a9ed6.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
-    <img src="https://user-images.githubusercontent.com/13490629/217203457-8000f037-6039-4fdc-b827-4b6d61f8e67a.png" style="display: block;-webkit-user-select: none;margin: auto;"><br/>
-    <img src="https://user-images.githubusercontent.com/13490629/217203965-c89aa02a-2dc8-4831-9b69-5807c564be64.png" style="display: block;-webkit-user-select: none;margin: auto;">
-</div><br/>
 
-![image](https://user-images.githubusercontent.com/13490629/217298168-6ed747f9-9a04-4285-9ed2-b43f75943940.png)
+![image](https://user-images.githubusercontent.com/13490629/217405206-8b65493e-3ce9-498a-877e-9ae5da96d99b.png)
+
+**Testing the "shellcode.bin"**
+
+* Make sure that "grades.txt" exist at the project folder
+* Compile using make aand run the "run-shellcode" program providing the "shellcode.bin" path as argument
+
+  ```shell
+  ./run-shellcode shellcode.bin
+  ```
+
+### Part 2 - Find the target buffer bounderies and modify "exploit-template.py"
+
+And then inject the compiled Shellcode.S to be executed on the web server:
+
+Here I choose the “value[512]” variable of “http\_request\_headers” function, the exploit will send the shellcode so it will fill the start of the “value” variable buffer. And the calculate the remaining space until the return pointer of the function, and overwrite the return pointer with the address of the start of the exploited buffer where the compiled shellcode start and by this the function will return back to itself and execute the shellcode which will delete the grades.txt file from the server.
+
+![image](https://user-images.githubusercontent.com/13490629/217408210-fafb45b9-1873-4791-b883-25e6b2004d34.png)
+
+![image](https://user-images.githubusercontent.com/13490629/217408292-56c0523e-24da-4eb2-9807-dd01034b9f83.png)
+
+To run this exploit, first run the server on desired port
+
+```shell
+./zookd-exstack 8080
+
+```
+
+Then while the server is running , execute the exploit-template.py script and watch how the "grades.txt" file is deleted.
+
+```shell
+python ./exploit-template.py localhost 8080
+```
