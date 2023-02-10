@@ -1,7 +1,7 @@
 /* dispatch daemon */
 
 #include "http.h"
-#include <err.h>cv
+#include <err.h>
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
