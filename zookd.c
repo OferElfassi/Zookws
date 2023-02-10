@@ -1,17 +1,12 @@
 /* dispatch daemon */
 
 #include "http.h"
-#include <err.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <err.h>cv
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <sys/socket.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <grp.h>
 #define MINARGS 3
 #define DBG_ON 1
 #define DBG_COLOR MAGENTA
@@ -35,9 +30,6 @@ int main(int argc, char **argv) {
     LOG("zookd is on\n");
     parse_args(argc, argv);
     LOG("parsed args:\nport:%s \nfds:%s \nfd_names:%s",port, TO_STR(fds,fd_count),TO_STR(fd_names,fd_count));
-//    LOG("Start delay");
-//    delay(5000);
-//    LOG("End delay");
     run_server(port);
 }
 
@@ -68,11 +60,9 @@ static int start_server(const char *portstr) {
     struct addrinfo hints = {0}, *res;
     int sockfd;
     int e, opt = 1;
-
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
-
     if ((e = getaddrinfo(NULL, portstr, &hints, &res)))
         LOG_ERROR("getaddrinfo: %s", gai_strerror(e));
     if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
@@ -96,19 +86,13 @@ static int start_server(const char *portstr) {
  * @param cltfd client socket
  */
 static void process_client(int fd) {
-
     static char env[8192];
     static size_t env_len = 8192;
     char reqpath[4096];
     const char *errmsg;
-
-
-    /* get the request line */
     if ((errmsg = http_request_line(fd, reqpath, env, &env_len)))
         return http_err(fd, 500, "http_request_line: %s", errmsg);
-
     LOG("reqpath: %s", reqpath);
-
     if (sendfd(fds[0], env, env_len, fd) < 0)
         LOG_ERROR("ERROR sendfd socket:%d, fd:%d", sock_fd, fds[0]);
 }
