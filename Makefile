@@ -3,6 +3,8 @@ CFLAGS  := -m64 -g -std=c99 -Wall -Wno-format-overflow -D_GNU_SOURCE -static
 LDFLAGS := -m64
 LDLIBS  := 
 PROGS   := zookd \
+           zookld \
+           zookhttp \
            zookd-exstack \
            zookd-nxstack \
            zookd-withssp \
@@ -21,12 +23,23 @@ all: $(PROGS)
 .PHONY: all
 
 zookd: %: %.o http.o
+
+zookld: zookld.o http.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+zookld: zookhttp.o http.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
 zookd-exstack: %-exstack: %.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@ -z execstack
+
 zookd-nxstack: %-nxstack: %.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
 zookd-withssp: %: %.o http-withssp.o
+
 run-shellcode: %: %.o
+
 %.o: %.c
 	$(CC) $< -c -o $@ $(CFLAGS) -fno-stack-protector
 
