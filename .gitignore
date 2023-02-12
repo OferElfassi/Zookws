@@ -6,7 +6,7 @@ venv
 /zookd-exstack
 /zookd-nxstack
 /zookd-withssp
-/zookfs
+/zookhttp
 /zookfs-exstack
 /zookfs-nxstack
 /zookfs-withssp

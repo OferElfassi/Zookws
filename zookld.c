@@ -10,16 +10,15 @@
 #include "http.h"
 
 #define DBG_ON 1
-#define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__);
+#define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__)
 
-#define SVC_CNT 3
+#define SVC_CNT 2
 #define SHARED_GID 81111
 #define JAIL_ROOT "/var/okws/run"
 enum svc_indexes {ZOOKD,HTTP_SVC,AUTH_SVC};
 SVCS svcs[SVC_CNT] = {
         {"zookd",  "zookd",  -1, -1, -1,51001,51001},
-        {"zookhttp","httpsvc",-1, -1, -1,61001,61001},
-        {"authsvc/sock","zoobar/auth-server.py",-1, -1, -1,71001,71001},
+        {"zookhttp","zookhttp",-1, -1, -1,61001,61001},
 };
 
 
@@ -70,11 +69,12 @@ int main(int argc, char **argv) {
  */
 void create_socket_pair() {
     int socketPair[2];
-    for (int i = 1; i < SVC_CNT; ++i) {
+    for (int i = 1; i < SVC_CNT; i++) {
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, socketPair))
             LOG_ERROR("socketpair");
         svcs[i].sockfd1 = socketPair[0];
         svcs[i].sockfd2 = socketPair[1];
+        LOG("Created socket pair for %s , sockfd1 =%d, sockfd2 =%d,", svcs[i].name, svcs[i].sockfd1, svcs[i].sockfd2);
     }
 }
 
@@ -136,22 +136,23 @@ pid_t launch_svc(int svc_index) {
             LOG("%s:pid %d", svcs[svc_index].path, pid);
             return pid;
     }
-    chdir(JAIL_ROOT); // change the working directory to the jail root
-    chroot("."); // chroot to the jail root
-    print_current_dir();
-    uid_t uid = svcs[svc_index].uid;
-    gid_t gid = svcs[svc_index].gid;
+//    chdir(JAIL_ROOT); // change the working directory to the jail root
+//    chroot("."); // chroot to the jail root
+//    print_current_dir();
+//    uid_t uid = svcs[svc_index].uid;
+//    gid_t gid = svcs[svc_index].gid;
 //    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
-    setresgid(gid, gid, gid);
-    setgroups(1,group_list);
-    setresuid(uid, uid, uid);
+//    setresgid(gid, gid, gid);
+//    setgroups(1,group_list);
+//    setresuid(uid, uid, uid);
     args_len = set_args(argv, svc_index);
-    print_cwd();
-    LOG("execv args:%s", TO_STR(argv, args_len));
+//    print_cwd();
+    LOG("execv path:%s args:%s",svcs[svc_index].path, TO_STR(argv, args_len));
     signal(SIGCHLD, SIG_DFL);
     signal(SIGPIPE, SIG_DFL);
     execv(svcs[svc_index].path, argv);
     LOG_ERROR("execv %s", svcs[svc_index].path);
+    return 0;
 }
 
 
@@ -170,8 +171,8 @@ int set_args(char *argv[], int svc_index) {
         argv[++args_len] = PORT;
         argv[++args_len] = intToStr(fd_count);
         for (int i = 1; i < SVC_CNT; i++) {
-            argv[++args_len] = intToStr(svcs[svc_index].sockfd2);
-            argv[++args_len] = svcs[svc_index].name;
+            argv[++args_len] = intToStr(svcs[i].sockfd2);
+            argv[++args_len] = svcs[i].name;
         }
     } else {
         argv[++args_len] = intToStr(svcs[svc_index].sockfd1);

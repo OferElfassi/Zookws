@@ -22,23 +22,27 @@ endif
 all: $(PROGS)
 .PHONY: all
 
-zookd: %: %.o http.o
-
 zookld: zookld.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-zookld: zookhttp.o http.o
+zookhttp: zookhttp.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-zookd-exstack: %-exstack: %.o http.o
+zookd: zookd.o http.o
+
+zookd-exstack: zookd.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@ -z execstack
 
-zookd-nxstack: %-nxstack: %.o http.o
+zookd-nxstack: zookd.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-zookd-withssp: %: %.o http-withssp.o
+zookd-withssp: zookd-withssp.o http-withssp.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-run-shellcode: %: %.o
+run-shellcode: run-shellcode.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+zookld.o: zookld.c http.h
 
 %.o: %.c
 	$(CC) $< -c -o $@ $(CFLAGS) -fno-stack-protector
