@@ -13,14 +13,17 @@
 #define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__);
 
 #define SVC_CNT 3
-#define SHARED_GID "81111"
+#define SHARED_GID 81111
+#define JAIL_ROOT "/var/okws/run"
 enum svc_indexes {ZOOKD,HTTP_SVC,AUTH_SVC};
 SVCS svcs[SVC_CNT] = {
-        {"zookd",  "zookd",  "-1", "-1", "-1","51001","51001"},
-        {"zookhttp","httpsvc","-1", "-1", "-1","61001","61001"},
-        {"authsvc/sock","zoobar/auth-server.py","-1", "-1", "-1","71001","71001"},
+        {"zookd",  "zookd",  -1, -1, -1,51001,51001},
+        {"zookhttp","httpsvc",-1, -1, -1,61001,61001},
+        {"authsvc/sock","zoobar/auth-server.py",-1, -1, -1,71001,71001},
 };
 
+
+gid_t group_list[1] = {SHARED_GID};
 
 static pid_t launch_svc(int);
 
@@ -32,28 +35,17 @@ void register_signal_handler();
 
 void launch_child_processes();
 
-int set_args(char *argv[], int service);
-
-gid_t group_list[1];
-
+int set_args(char *[], int );
 
 struct sigaction sa;
 
 char *PORT = "8080";
 
-void print_cwd(){
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
-    printf("Current working dir: %s\n", cwd);
-}
+void print_cwd();
+
 int main(int argc, char **argv) {
     system("clear");
-//    system("echo \"process details:\";pwd; echo \"UID: $UID\";echo \"GID: $(id -g)\";ls -la  ");
-    char cwd[1024];
     print_cwd();
-
-    group_list[0] = strToInt(SHARED_ID);
-//    update_files();
     if (argc == 2)
         PORT = argv[1];
     create_socket_pair();
@@ -64,8 +56,8 @@ int main(int argc, char **argv) {
 
     while ((pid = wait(NULL)) > 0) {
         for (int i = 0; i < SVC_CNT; i++) {
-            if (strToInt(PATHS[i][PID]) == pid) {
-                LOG("Process %s died, restarting", PATHS[i][NAME]);
+            if (svcs[i].pid == pid) {
+                LOG("Process %s died, restarting", svcs[i].name);
                 launch_svc(i);
                 break;
             }
@@ -81,8 +73,8 @@ void create_socket_pair() {
     for (int i = 1; i < SVC_CNT; ++i) {
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, socketPair))
             LOG_ERROR("socketpair");
-        svcs[i][SOCKFD1] = intToStr(socketPair[0]);
-        svcs[i][SOCKFD2] = intToStr(socketPair[1]);
+        svcs[i].sockfd1 = socketPair[0];
+        svcs[i].sockfd2 = socketPair[1];
     }
 }
 
@@ -114,8 +106,8 @@ void handle_child_process() {
     int status;
     while ((pid = waitpid(-1, &status, WNOHANG)) != -1) {
         for (int i = 0; i < SVC_CNT; i++) {
-            if (strToInt(PATHS[i][PID]) == pid) {
-                LOG("Process %s died, restarting", PATHS[i][NAME]);
+            if (svcs[i].pid == pid) {
+                LOG("Process %s died, restarting", svcs[i].name);
                 launch_svc(i);
                 return;
             }
@@ -129,7 +121,7 @@ void handle_child_process() {
  * @param service index of the service in the config array
  * @return
  */
-pid_t launch_svc(int service) {
+pid_t launch_svc(int svc_index) {
     pid_t pid;
     char *argv[32] = {0};
     int args_len = 0;
@@ -138,30 +130,28 @@ pid_t launch_svc(int service) {
         case 0:
             break;
         case -1:
-            LOG_ERROR("fork %s", PATHS[service][EXEC]);
+            LOG_ERROR("fork %s", svcs[svc_index].path);
         default:
-            PATHS[service][PID] = intToStr(pid);
-            LOG("%s:pid %d", PATHS[service][EXEC], pid);
+            svcs[svc_index].pid = pid;
+            LOG("%s:pid %d", svcs[svc_index].path, pid);
             return pid;
     }
     chdir(JAIL_ROOT); // change the working directory to the jail root
     chroot("."); // chroot to the jail root
     print_current_dir();
-    int uid = strToInt(PATHS[service][S_UID]);
-    int gid = strToInt(PATHS[service][S_GID]);
+    uid_t uid = svcs[svc_index].uid;
+    gid_t gid = svcs[svc_index].gid;
 //    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
     setresgid(gid, gid, gid);
     setgroups(1,group_list);
     setresuid(uid, uid, uid);
-    args_len = set_args(argv, service);
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
-    printf("Current working dir: %s\n", cwd);
+    args_len = set_args(argv, svc_index);
+    print_cwd();
     LOG("execv args:%s", TO_STR(argv, args_len));
     signal(SIGCHLD, SIG_DFL);
     signal(SIGPIPE, SIG_DFL);
-    execv(PATHS[service][EXEC], argv);
-    LOG_ERROR("execv %s", PATHS[service][EXEC]);
+    execv(svcs[svc_index].path, argv);
+    LOG_ERROR("execv %s", svcs[svc_index].path);
 }
 
 
@@ -172,22 +162,27 @@ pid_t launch_svc(int service) {
  * @param argv string array to store the arguments
  * @param service  index of the service in the config array
  */
-int set_args(char *argv[], int service) {
+int set_args(char *argv[], int svc_index) {
     int args_len = -1;
     int fd_count = SVC_CNT - 1;
-    argv[++args_len] = PATHS[service][EXEC];
-    if (service == ZOOKD) {
+    argv[++args_len] = svcs[svc_index].path;
+    if (svc_index == ZOOKD) {
         argv[++args_len] = PORT;
         argv[++args_len] = intToStr(fd_count);
         for (int i = 1; i < SVC_CNT; i++) {
-            argv[++args_len] = svcs[i][SOCKFD2];
-            argv[++args_len] = PATHS[i][NAME];
+            argv[++args_len] = intToStr(svcs[svc_index].sockfd2);
+            argv[++args_len] = svcs[svc_index].name;
         }
     } else {
-        argv[++args_len] = svcs[service][SOCKFD1];
-        argv[++args_len] = PATHS[service][NAME];
+        argv[++args_len] = intToStr(svcs[svc_index].sockfd1);
+        argv[++args_len] = svcs[svc_index].name;
     }
     argv[++args_len] = NULL;
     return args_len;
 }
 
+void print_cwd(){
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    printf("Current working dir: %s\n", cwd);
+}

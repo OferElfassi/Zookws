@@ -25,11 +25,11 @@ char**: str_array_to_str          \
 typedef struct SVCS_T {
     char *name;
     char *path;
-    char *pid;
-    char *sockfd1;
-    char *sockfd2;
-    char *uid;
-    char *gid;
+    pid_t pid;
+    int sockfd1;
+    int sockfd2;
+    uid_t uid;
+    gid_t gid;
 }SVCS;
 
 static char *const colors[9] = {"\x1B[0m", "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m", "\x1B[35m", "\x1B[36m","\x1B[37m"};
