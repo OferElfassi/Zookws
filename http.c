@@ -639,7 +639,7 @@ char *int_array_to_str(int *arr,int length) {
         pos += snprintf(str + pos, strlen(tmp) + strlen(",") + 1, "%d,", arr[i]);
         free(tmp);
     }
-    snprintf(str + pos - 1, strlen(" ]") + 1, "%s\n", " ]");
+    snprintf(str + pos - 1, strlen(" ]") + 2, "%s\n", " ]");
     str[len] = '\0';
 
     return str;
@@ -657,7 +657,7 @@ char *str_array_to_str(char **arr,int length) {
     for (int i = 0; i < length; i++) {
         pos += snprintf(str + pos, strlen(arr[i]) + strlen(",") + 1, "%s,", arr[i]);
     }
-    snprintf(str + pos - 1, strlen(" ]") + 1, "%s\n", " ]");
+    snprintf(str + pos - 1, strlen(" ]") + 2, "%s\n", " ]");
     str[len] = '\0';
     return str;
 }

@@ -1,7 +1,7 @@
 ASFLAGS := -m64
 CFLAGS  := -m64 -g -std=c99 -Wall -Wno-format-overflow -D_GNU_SOURCE -static
 LDFLAGS := -m64
-LDLIBS  := 
+LDLIBS  :=
 PROGS   := zookd \
            zookld \
            zookhttp \
@@ -22,13 +22,17 @@ endif
 all: $(PROGS)
 .PHONY: all
 
+zookld.o: zookld.c http.h
 zookld: zookld.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
+zookhttp.o: zookhttp.c http.h
 zookhttp: zookhttp.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
+zookd.o: zookd.c http.h
 zookd: zookd.o http.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 zookd-exstack: zookd.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@ -z execstack
@@ -41,8 +45,6 @@ zookd-withssp: zookd-withssp.o http-withssp.o
 
 run-shellcode: run-shellcode.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
-
-zookld.o: zookld.c http.h
 
 %.o: %.c
 	$(CC) $< -c -o $@ $(CFLAGS) -fno-stack-protector

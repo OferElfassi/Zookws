@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include "http.h"
 
@@ -13,16 +14,16 @@
 #define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__)
 
 #define SVC_CNT 2
-#define SHARED_GID 81111
+#define SHARED_GID 1000
 #define JAIL_ROOT "/var/okws/run"
 enum svc_indexes {ZOOKD,HTTP_SVC,AUTH_SVC};
 SVCS svcs[SVC_CNT] = {
-        {"zookd",  "zookd",  -1, -1, -1,51001,51001},
-        {"zookhttp","zookhttp",-1, -1, -1,61001,61001},
+        {"zookd",  "zookd",  -1, -1, -1,500,500,0,{555}},
+        {"zookhttp","zookhttp",-1, -1, -1,600,600,0,{555}},
 };
 
 
-gid_t group_list[1] = {SHARED_GID};
+//gid_t group_list[1] = {SHARED_GID};
 
 static pid_t launch_svc(int);
 
@@ -35,6 +36,10 @@ void register_signal_handler();
 void launch_child_processes();
 
 int set_args(char *[], int );
+
+void set_groups(int);
+
+void list_files(char *dir_name);
 
 struct sigaction sa;
 
@@ -136,20 +141,27 @@ pid_t launch_svc(int svc_index) {
             LOG("%s:pid %d", svcs[svc_index].path, pid);
             return pid;
     }
-//    chdir(JAIL_ROOT); // change the working directory to the jail root
+    chdir(JAIL_ROOT); // change the working directory to the jail root
+    LOG("CWD: %s", getcwd(NULL, 0));
 //    chroot("."); // chroot to the jail root
-//    print_current_dir();
-//    uid_t uid = svcs[svc_index].uid;
-//    gid_t gid = svcs[svc_index].gid;
-//    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
-//    setresgid(gid, gid, gid);
-//    setgroups(1,group_list);
-//    setresuid(uid, uid, uid);
+    list_files(".");
+    uid_t uid = svcs[svc_index].uid;
+    gid_t gid = svcs[svc_index].gid;
+    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
+    setresgid(gid, gid, gid);
+    set_groups(svc_index);
+    setresuid(uid, uid, uid);
     args_len = set_args(argv, svc_index);
-//    print_cwd();
+    print_cwd();
+    list_files(".");
+    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
     LOG("execv path:%s args:%s",svcs[svc_index].path, TO_STR(argv, args_len));
     signal(SIGCHLD, SIG_DFL);
     signal(SIGPIPE, SIG_DFL);
+//    char *aaa[2];
+//    aaa[0] = "/bin/ls";
+//    aaa[1] = NULL;
+//    execv( aaa[0], aaa );
     execv(svcs[svc_index].path, argv);
     LOG_ERROR("execv %s", svcs[svc_index].path);
     return 0;
@@ -182,8 +194,32 @@ int set_args(char *argv[], int svc_index) {
     return args_len;
 }
 
+void set_groups(int svc_index){
+    int group_count = svcs[svc_index].ngrps;
+    if(group_count == 0)
+        return;
+    gid_t group_list[group_count];
+    for (int i = 0; i < group_count; i++) {
+        group_list[i] = svcs[svc_index].grps[i];
+    }
+    setgroups(group_count,group_list);
+}
+
 void print_cwd(){
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
     printf("Current working dir: %s\n", cwd);
+}
+
+void list_files(char *dir_name) {
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(dir_name);
+    printf("Files in %s:\n", dir_name);
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            printf("%s\n", dir->d_name);
+        }
+        closedir(d);
+    }
 }
