@@ -3,6 +3,7 @@ venv
 /*.o
 /*.log
 /zookd
+/zookhttp
 /zookd-exstack
 /zookd-nxstack
 /zookd-withssp
