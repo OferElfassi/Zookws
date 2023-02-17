@@ -1,4 +1,4 @@
-# 1.2 Code Injection
+# 2.1 privilege separation
 
 The goal here is to injected code will unlink (remove) a sensitive file on the server, namely
 "grades.txt". using the *-exstack binaries, since they have an executable stack that
