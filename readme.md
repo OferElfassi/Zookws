@@ -1,7 +1,6 @@
 # 2.1 privilege separation
 
-Two aspects make privilege separation challenging in the real world and in this lab. First,
-privilege separation requires to take apart the application and split it up in separate
+Privilege separation challenges: first, requires to take apart the application and split it up in separate
 pieces.  Second, ensure that each piece runs with minimal privileges, which
 requires setting permissions precisely and configuring the pieces correctly.
 
