@@ -1,44 +1,37 @@
 # 2.1 privilege separation
 
-The goal here is to injected code will unlink (remove) a sensitive file on the server, namely
-"grades.txt". using the *-exstack binaries, since they have an executable stack that
-makes it easier to inject code.
+Two aspects make privilege separation challenging in the real world and in this lab. First,
+privilege separation requires to take apart the application and split it up in separate
+pieces.  Second, ensure that each piece runs with minimal privileges, which
+requires setting permissions precisely and configuring the pieces correctly.
 
-### Part 1 - Writing assembly code that unlinks a file (shellcode.S)
+![image](https://user-images.githubusercontent.com/13490629/219546840-b4d3f292-1c18-4baf-8209-86a72eeaccee.png)
 
-Afterwards, compile the assembly code into a binary file (shellcode.bin)
+### Part 1 - Prepare the environment
 
+* Create jail directory
+* Create virtual environment for the web server python code in the jail directory
+* Install the required python packages in the virtual environment
+* compile the c code and check for required files and directories and copy them to the jail directory
+* copy any required packages and environment variables to the jail directory
+* change the owners and permissions of the jail directory properly
 
-![image](https://user-images.githubusercontent.com/13490629/217405206-8b65493e-3ce9-498a-877e-9ae5da96d99b.png)
-
-**Testing the "shellcode.bin"**
-
-* Make sure that "grades.txt" exist at the project folder
-* Compile using make aand run the "run-shellcode" program providing the "shellcode.bin" path as argument
-
-  ```shell
-  ./run-shellcode shellcode.bin
-  ```
-
-### Part 2 - Find the target buffer bounderies and modify "exploit-template.py"
-
-And then inject the compiled Shellcode.S to be executed on the web server:
-
-Here I choose the “value[512]” variable of “http\_request\_headers” function, the exploit will send the shellcode so it will fill the start of the “value” variable buffer. And the calculate the remaining space until the return pointer of the function, and overwrite the return pointer with the address of the start of the exploited buffer where the compiled shellcode start and by this the function will return back to itself and execute the shellcode which will delete the grades.txt file from the server.
-
-![image](https://user-images.githubusercontent.com/13490629/217408210-fafb45b9-1873-4791-b883-25e6b2004d34.png)
-
-![image](https://user-images.githubusercontent.com/13490629/217408292-56c0523e-24da-4eb2-9807-dd01034b9f83.png)
-
-To run this exploit, first run the server on desired port
+the setup.sh script will do all the above steps
 
 ```shell
-./zookd-exstack 8080
-
+cd project/directory
+make all
+sudo ./setup.sh
 ```
 
-Then while the server is running , execute the exploit-template.py script and watch how the "grades.txt" file is deleted.
+
+### Part 2 - Run the web server
+
+* Activate the virtual environment
+* Run the web server loader executable zookld which is the only executable that runs with root privileges and located out of jail directory
+* then the zookld will load the web server executable zookd and zookhttp processes by attaching each process to new forked chrooted jail process
 
 ```shell
-python ./exploit-template.py localhost 8080
+cd project/directory
+sudo ./zookld 8080
 ```
