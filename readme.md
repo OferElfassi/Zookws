@@ -26,11 +26,27 @@ sudo ./setup.sh
 
 ### Part 2 - Run the web server
 
-* Activate the virtual environment
+* Activate the virtual environment  
 * Run the web server loader executable zookld which is the only executable that runs with root privileges and located out of jail directory
 * then the zookld will load the web server executable zookd and zookhttp processes by attaching each process to new forked chrooted jail process
 
 ```shell
+cd jail/directory
+source venv/bin/activate
 cd project/directory
 sudo ./zookld 8080
 ```
+
+### Part 3 - Test code injection exploit
+
+* Run the web server with zookld-exstack executable which execute the http service tht compiled with executable stack (zookhttp-exstack)
+* Run the exploit-template2.py
+
+```shell
+cd jail/directory
+source venv/bin/activate
+cd project/directory
+sudo ./zookld-exstack 8080
+```
+
+![image](https://user-images.githubusercontent.com/13490629/219696223-483cc4a1-a10a-46b4-bc65-aeb796c2d1d5.png)

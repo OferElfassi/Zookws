@@ -30,7 +30,7 @@ cp "index.html" "$JAIL/index.html"
 cp "favicon.ico" "$JAIL/favicon.ico"
 
 # Executables list
-files=(zookd zookhttp)
+files=(zookd zookhttp zookd-exstack zookhttp-exstack)
 
 # Database tables list
 db_tables=(person transfer)

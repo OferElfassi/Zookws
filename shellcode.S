@@ -1,6 +1,6 @@
 #include <sys/syscall.h>
-#define STRING	"/home/kali/Desktop/projects/cyberY4S1/FinalProject/grades.txt"
-#define STRLEN	61
+#define STRING	"/home/kali/CLionProjects/Zookws/grades.txt"
+#define STRLEN	42
 #define ARGV	(STRLEN+1)
 #define ENVP	(ARGV+8)
 .globl main

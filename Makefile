@@ -6,6 +6,8 @@ PROGS   := zookd \
            zookld \
            zookhttp \
            zookd-exstack \
+           zookld-exstack\
+           zookhttp-exstack\
            zookd-nxstack \
            zookd-withssp \
            shellcode.bin \
@@ -22,6 +24,10 @@ endif
 all: $(PROGS)
 .PHONY: all
 
+zookld-exstack.o: zookld-exstack.c http.h
+zookld-exstack: zookld-exstack.o http.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
 zookld.o: zookld.c http.h
 zookld: zookld.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
@@ -35,6 +41,9 @@ zookd: zookd.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 zookd-exstack: zookd.o http.o
+	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@ -z execstack
+
+zookhttp-exstack: zookhttp.o http.o
 	$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@ -z execstack
 
 zookd-nxstack: zookd.o http.o
