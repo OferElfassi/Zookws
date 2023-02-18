@@ -4,9 +4,12 @@ venv
 /*.log
 /zookd
 /zookd-exstack
+/zookld-exstack
 /zookd-nxstack
 /zookd-withssp
-/zookfs
+/zookhttp
+/zookhttp-exstack
+/zoobar/grades.txt
 /zookfs-exstack
 /zookfs-nxstack
 /zookfs-withssp

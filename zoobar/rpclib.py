@@ -30,7 +30,7 @@ def buffered_readlines(sock):
             if newdata == '':
                 break
             buf += newdata
-        except IOError, e:
+        except IOError as e:
             if e.errno == errno.ECONNRESET:
                 break
 
@@ -55,7 +55,7 @@ class RpcServer(object):
 
         # Allow anyone to connect.
         # For access control, use directory permissions.
-        os.chmod(sockpath, 0777)
+        os.chmod(sockpath, 0o777)
 
         server.listen(5)
         while True:
