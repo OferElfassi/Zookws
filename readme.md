@@ -1,29 +1,29 @@
-# 2.2.1 privilege separating login service
+# 3.1 Remote Execution - Reflected Cross-site Scripting 
 
-The first step towards protecting passwords will be to create a service that deals with user passwords and cookies, so that only that service can access them directly, and the rest of the Zoobar application cannot. In particular, we want to separate the code that deals with user authentication (i.e., passwords and tokens) from the rest of the application code. The current zoobar application stores everything about the user (their profile, their zoobar balance, and authentication info) in the Person table (see zoodb.py). We want to move the authentication info out of the Person table into a separate Cred table (Cred stands for Credentials), and move the code that accesses this authentication information (i.e., auth.py) into a separate service.
+The goal is to craft a URL that, when accessed, will cause the victim's browser to execute some JavaScript you as the attacker has supplied.
+* When examining a URLs, there is one where the parameter is sent along with the URL, and then reflected back to the user view. 
+* The url is http://localhost:8080/zoobar/index.cgi/users?user=user_name
+* The user_name parameter is reflected back to the search box in the users page and its actually part of the value attribute of the input tag
+* By replacing the user_name with a javascript code, we can execute the javascript code in the victim's browser
+* The javascript code that will be executed is alert(document.cookie); which will pop up an alert box with the victim's cookies
+* in order to execute the javascript code, we need to escape the double quotes and the angle brackets.
+* The final url will be http://localhost:8080/zoobar/index.cgi/users?user=%22%3Cp%3E%3Cscript%3Ealert(document.cookie);%3C/script%3E%3C/p%3E%22
+* this will translate to ``` "<p><script>alert(document.cookie);</script></p>" ``` which will be reflected and print the victim's cookies in an alert box
 
-![image](https://user-images.githubusercontent.com/13490629/220238481-f53ea767-d8d1-433c-82c9-09fad5567858.png)
-### Part 1 - Prepare the environment
+### Following are screenshots of the attack:
 
-* Create jail directory
-* compile the c code and check for required files and directories and copy them to the jail directory
-* copy any required packages and environment variables to the jail directory
-* change the owners and permissions of the jail directory properly
+#### finding the reflected parameter:
 
-the setup.sh script will do all the above steps
+<img alt="image" src="https://user-images.githubusercontent.com/13490629/220351090-0779ae1b-2759-4572-a71c-edab7bb23eda.png" width="500"/>
 
-```shell
-cd project/directory
-make all
-sudo ./setup.sh
-```
+#### finding the dom element that affected by the reflected parameter:
 
-### Part 2 - Run the web server
+<img alt="image" height="500" src="https://user-images.githubusercontent.com/13490629/220351201-c61efa0b-17c8-4b2d-b61e-2cf8f8ff17aa.png"/>
 
-* Run the web server loader executable zookld which is the only executable that runs with root privileges and located out of jail directory
-* then the zookld will load the web server executable zookd, zookhttp and authsvc processes by attaching each process to new forked chrooted jail process
+#### testing the attack:
 
-```shell
-cd project/directory
-sudo ./zookld 8080
-```
+![image](https://user-images.githubusercontent.com/13490629/220351284-d2ba3c53-f03c-4e76-b878-cf627d515ef0.png)
+
+
+
+
