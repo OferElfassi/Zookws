@@ -14,12 +14,13 @@ MEDIA="$ZOOBAR/media"
 TEMPLATES="$ZOOBAR/templates"
 DB="$ZOOBAR/db"
 AUTH_SVC="$JAIL/authsvc"
+BANK_SVC="$JAIL/authsvc"
 # Files to copy
 files=(zookd zookhttp index.html favicon.ico)
 # Database tables
-db_tables=(person transfer cred)
+db_tables=(person transfer cred bank)
 # Services
-svcs=(authsvc)
+svcs=(authsvc banksvc)
 
 # Create JAIL if not exists
 if [ ! -d "$JAIL" ]; then
