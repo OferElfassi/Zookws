@@ -2,7 +2,7 @@ from flask import g, redirect, render_template, request, url_for, Markup
 from functools import wraps
 from debug import *
 from zoodb import *
-
+import time
 import auth
 import bank
 import random
@@ -14,6 +14,7 @@ class User(object):
         self.person = None
 
     def checkLogin(self, username, password):
+
         token = auth_client.login(username, password)
         if token is not None:
             return self.loginCookie(username, token)
@@ -119,3 +120,5 @@ def logout():
     response = redirect(url_for('login'))
     response.set_cookie('PyZoobarLogin', '')
     return response
+
+
