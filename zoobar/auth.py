@@ -1,8 +1,14 @@
+import binascii
+
 from zoodb import *
+import secrets
 from debug import *
+import pbkdf2
 
 import hashlib
 import random
+
+SALT_LEN = 25
 
 
 def newtoken(db, cred):
@@ -17,7 +23,7 @@ def login(username, password):
     cred = db.query(Cred).get(username)
     if not cred:
         return None
-    if cred.password == password:
+    if cred.password == pbkdf2.PBKDF2(password, cred.salt).hexread(32):
         return newtoken(db, cred)
     else:
         return None
@@ -41,8 +47,10 @@ def register(username, password):
     if cred:
         return None
     newcred = Cred()
+    newcred.salt = secrets.token_bytes(SALT_LEN)
     newcred.username = username
     newcred.password = password
+    newcred.password = pbkdf2.PBKDF2(password, newcred.salt).hexread(32)
     db.add(newcred)
     db.commit()
     add_person(username)
