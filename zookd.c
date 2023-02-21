@@ -2,123 +2,116 @@
 
 #include "http.h"
 #include <err.h>
-#include <regex.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <netdb.h>
 #include <fcntl.h>
-#include <sys/wait.h>
-#include <sys/param.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#define MINARGS 3
+#define DBG_ON 1
+#define DBG_COLOR MAGENTA
+#define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,DBG_COLOR,DBG_ON,MSG,__VA_ARGS__);
 
 static void process_client(int);
-static int run_server(const char *portstr);
+
+static int run_server(const char *port);
+
 static int start_server(const char *portstr);
 
-int main(int argc, char **argv)
-{
-    if (argc != 2)
-        errx(1, "Wrong arguments");
+void parse_args(int argc, char **argv);
+int sock_fd;
+char *port;
+int fd_count =-1;
+int fds[32];
+char *fd_names[32] = {0};
 
-    run_server(argv[1]);
+int main(int argc, char **argv) {
+
+    LOG("zookd is on\n");
+    parse_args(argc, argv);
+    LOG("parsed args:\nport:%s \nfds:%s \nfd_names:%s",port, TO_STR(fds,fd_count),TO_STR(fd_names,fd_count));
+    run_server(port);
 }
 
-/* socket-bind-listen idiom */
+/**
+ * accept connections
+ * @param port port to listen on
+ */
+static int run_server(const char *port) {
+    int sockfd = start_server(port);
+    LOG("Listening on port %s", port);
 
-static int start_server(const char *portstr)
-{
+    for (;;) {
+        int cltfd = accept(sockfd, NULL, NULL);
+        if (cltfd < 0)
+            err(1, "accept");
+        process_client(cltfd);
+        close(cltfd);
+    }
+}
+
+/**
+ * create http socket on port portstr provided by the args sent to zookd from zookld
+ * @param portstr port to create socket on
+ * @return socket file descriptor
+ */
+static int start_server(const char *portstr) {
+    LOG("start_server on port %s", portstr);
     struct addrinfo hints = {0}, *res;
     int sockfd;
     int e, opt = 1;
-
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
-
     if ((e = getaddrinfo(NULL, portstr, &hints, &res)))
-        errx(1, "getaddrinfo: %s", gai_strerror(e));
+        LOG_ERROR("getaddrinfo: %s", gai_strerror(e));
     if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
-        err(1, "socket");
+        LOG_ERROR("socket");
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
-        err(1, "setsockopt");
+        LOG_ERROR("setsockopt");
     if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0)
-        err(1, "fcntl");
+        LOG_ERROR("fcntl");
     if (bind(sockfd, res->ai_addr, res->ai_addrlen))
-        err(1, "bind");
+        LOG_ERROR("bind");
     if (listen(sockfd, 5))
-        err(1, "listen");
+        LOG_ERROR("listen");
     freeaddrinfo(res);
 
     return sockfd;
 }
 
-static int run_server(const char *port) {
-    int sockfd = start_server(port);
-    for (;;)
-    {
-	int cltfd = accept(sockfd, NULL, NULL);
-	int pid;
-	int status;
 
-	if (cltfd < 0)
-	    err(1, "accept");
-
-	/* fork a new process for each client process, because the process
-	 * builds up state specific for a client (e.g. cookie and other
-	 * enviroment variables that are set by request). We want to get rid off
-	 * that state when we have processed the request and start the next
-	 * request in a pristine state.
-         */
-	switch ((pid = fork()))
-	{
-	case -1:
-	    err(1, "fork");
-
-	case 0:
-	    process_client(cltfd);
-	    exit(0);
-	    break;
-
-	default:
-	    close(cltfd);
-	    pid = wait(&status);
-	    if (WIFSIGNALED(status)) {
-		printf("Child process %d terminated incorrectly, receiving signal %d\n",
-		       pid, WTERMSIG(status));
-	    }
-	    break;
-	}
-    }
-}
-
-static void process_client(int fd)
-{
-    static char env[8192];  /* static variables are not on the stack */
+/**
+ * process client request
+ * @param cltfd client socket
+ */
+static void process_client(int fd) {
+    static char env[8192];
     static size_t env_len = 8192;
     char reqpath[4096];
     const char *errmsg;
-
-    /* get the request line */
     if ((errmsg = http_request_line(fd, reqpath, env, &env_len)))
         return http_err(fd, 500, "http_request_line: %s", errmsg);
-
-    env_deserialize(env, sizeof(env));
-
-    /* get all headers */
-    if ((errmsg = http_request_headers(fd)))
-      http_err(fd, 500, "http_request_headers: %s", errmsg);
-    else
-      http_serve(fd, getenv("REQUEST_URI"));
-
-    close(fd);
+    LOG("reqpath: %s", reqpath);
+    if (sendfd(fds[0], env, env_len, fd) < 0)
+        LOG_ERROR("ERROR sendfd socket:%d, fd:%d", sock_fd, fds[0]);
 }
 
-void accidentally(void)
-{
-       __asm__("mov 16(%%rbp), %%rdi": : :"rdi");
+/**
+ * args for zookd: [exec, port, fdCount, ....[fd,fdName]...]
+ * @param argc number of args
+ * @param argv args
+ */
+void parse_args(int argc, char **argv) {
+    LOG("parse_args");
+    if (argc < MINARGS)
+        LOG_ERROR("Wrong arguments");
+    int fds_itr = 2;
+    port =argv[1];
+    fd_count = strToInt(argv[2]);
+    for (int i = 0; i < fd_count; i++) {
+        fds[i] = strToInt(argv[++fds_itr]);
+        fd_names[i] = argv[++fds_itr];
+    }
 }
+

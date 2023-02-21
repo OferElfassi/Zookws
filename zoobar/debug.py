@@ -1,7 +1,7 @@
 import sys
 from functools import wraps
 import traceback
-
+import os
 
 def log(msg):
     # get current frame
@@ -25,6 +25,8 @@ def catch_err(f):
         except BaseException:
             log("caught exception in function %s:\n %s" % \
                 (f.__name__, traceback.format_exc()))
+            print(("Current process UID: {0}, GID: {1}, GIDS: {2}".format(
+                os.getuid(), os.getgid(), os.getgroups())))
 
     return __try
 

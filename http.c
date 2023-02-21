@@ -15,6 +15,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#define DBG_ON 1
+#define DBG_COLOR YELLOW
+#define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,DBG_COLOR,DBG_ON,MSG,__VA_ARGS__);
+
 void touch(const char *name) {
     if (access("/tmp/grading", F_OK) < 0)
         return;
@@ -295,6 +299,8 @@ void http_serve(int fd, const char *name)
             handler = http_serve_directory;
         else
             handler = http_serve_file;
+    } else{
+        printf("stat (%s) failed with error: %s\n",pn, strerror(errno));
     }
 
     handler(fd, pn);
@@ -517,7 +523,7 @@ ssize_t sendfd(int socket, const void *buffer, size_t length, int fd)
     msg.msg_controllen = cmsg->cmsg_len;
     r = sendmsg(socket, &msg, 0);
     if (r < 0)
-        warn("sendmsg");
+        LOG("sendmsg");
     return r;
 }
 
@@ -535,13 +541,133 @@ ssize_t recvfd(int socket, void *buffer, size_t length, int *fd)
     msg.msg_iovlen = 1;
     msg.msg_control = cmsg;
     msg.msg_controllen = cmsg->cmsg_len;
-again:
+    again:
     r = recvmsg(socket, &msg, 0);
     if (r < 0 && errno == EINTR)
         goto again;
-    if (r < 0)
-        warn("recvmsg");
-    else
-        *fd = *((int*)CMSG_DATA(cmsg));
+    if (r < 0) {
+        LOG("recvmsg");
+    }
+    else {
+        *fd = *((int *) CMSG_DATA(cmsg));
+    }
     return r;
+}
+
+void log_msg(const char *time, const char *file, const char *func, int line, COLOR_t color_out, int dbg,Log_Type logType, const char *fmt,...) {
+    if (dbg == 0) return;
+    va_list args;
+    va_start(args, fmt);
+    fprintf(stderr, UL_ON" \n%s(file %s |func %s |line %d )(%s)%s\n"UL_OFF, colors[color_out], basename(file), func,
+            line, time, colors[(logType==ERROR?RED:WHITE)]);
+    if(logType==ERROR) {
+        fprintf(stderr, "ERROR: ");
+        vfprintf(stderr, fmt, args);
+        fprintf(stderr, "\nerrno:%s\n", strerror(errno));
+        print_trace();
+        exit(EXIT_FAILURE);
+    }
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    fprintf(stderr, "%s\n", colors[0]);
+    printf("\n");
+    free((void *) time);
+}
+void print_trace(void) {
+    void *array[10];
+    char **strings;
+    int size, i;
+
+    size = backtrace (array, 10);
+    strings = backtrace_symbols (array, size);
+    if (strings != NULL)
+    {
+
+        fprintf(stderr,"Obtained %d nstack frames.\n", size);
+        for (i = 0; i < size; i++)
+            fprintf(stderr,"%d)\t%s\n\n",i+1, strings[i]);
+    }
+
+    free (strings);
+}
+char *get_time() {
+    char time_str[200];
+    struct tm *tmp;
+    time_t t = time(NULL);
+    tmp = localtime(&t);
+    if (strftime(time_str, sizeof(time_str), "%d/%m %H:%M:%S", tmp) == 0) {
+        strcpy(time_str, "0000");
+        return "0000";
+    }
+    return strdup(time_str);
+}
+
+void print_current_dir() {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        LOG_SUCCESS("Current working dir: %s\n", cwd);
+    } else {
+        LOG_ERROR("getcwd() error");
+    }
+}
+
+int strToInt(const char *str) {
+    return (int) strtoimax(str, NULL, 10);
+}
+
+char *intToStr(int i) {
+    char str[12];
+    sprintf(str, "%d", i);
+    return strdup(str);
+}
+
+void delay(int number_of_seconds) {
+    int milli_seconds = 1000 * number_of_seconds;
+    clock_t start_time = clock();
+    while (clock() < start_time + milli_seconds);
+}
+
+char *int_array_to_str(int *arr,int length) {
+    size_t len = snprintf(NULL, 0, "[ ");
+    for (int i = 0; i < length; i++) {
+        len += snprintf(NULL, 0, "%d,", arr[i]);
+    }
+    len += snprintf(NULL, 0, "]\n");
+    int pos = 0;
+    char *str = malloc(len + 1);
+    pos += snprintf(str,  strlen("[ ") + 1, "[ ");
+    for (int i = 0; i < length; i++) {
+        char *tmp = intToStr(arr[i]);
+        pos += snprintf(str + pos, strlen(tmp) + strlen(",") + 1, "%d,", arr[i]);
+        free(tmp);
+    }
+    snprintf(str + pos - 1, strlen(" ]") + 2, "%s\n", " ]");
+    str[len] = '\0';
+
+    return str;
+}
+
+char *str_array_to_str(char **arr,int length) {
+    size_t len = snprintf(NULL, 0, "[ ");
+    for (int i = 0; i < length; i++) {
+        len += snprintf(NULL, 0, "%s,", arr[i]);
+    }
+    len += snprintf(NULL, 0, "]\n");
+    int pos = 0;
+    char *str = malloc(len + 1);
+    pos += snprintf(str, strlen("[ ") + 1, "[ ");
+    for (int i = 0; i < length; i++) {
+        pos += snprintf(str + pos, strlen(arr[i]) + strlen(",") + 1, "%s,", arr[i]);
+    }
+    snprintf(str + pos - 1, strlen(" ]") + 2, "%s\n", " ]");
+    str[len] = '\0';
+    return str;
+}
+
+void assert_root_user() {
+    __uid_t uid = getuid();
+    __uid_t gid = getgid();
+    if (uid != 0 || gid != 0) {
+        LOG_ERROR("Must be run as root");
+    }
 }

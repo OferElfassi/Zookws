@@ -2,7 +2,6 @@
 
 
 from flask import Flask, g
-
 import login
 import index
 import users

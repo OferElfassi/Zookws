@@ -38,8 +38,7 @@ def balance(username):
 
 def get_log(username):
     db = transfer_setup()
-    l = db.query(Transfer).filter(or_(Transfer.sender == username,
-                                      Transfer.recipient == username))
+    l = db.query(Transfer).filter(or_(Transfer.sender == username,Transfer.recipient == username))
     r = []
     for t in l:
         r.append({'time': t.time,
