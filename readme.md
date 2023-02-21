@@ -1,4 +1,5 @@
-# 3.1 Remote Execution - Reflected Cross-site Scripting 
+# 3. Browser Protection
+## 3.1. Remote Execution - Reflected Cross-site Scripting 
 
 The goal is to craft a URL that, when accessed, will cause the victim's browser to execute some JavaScript you as the attacker has supplied.
 * When examining a URLs, there is one where the parameter is sent along with the URL, and then reflected back to the user view. 
@@ -25,5 +26,7 @@ The goal is to craft a URL that, when accessed, will cause the victim's browser 
 ![image](https://user-images.githubusercontent.com/13490629/220351284-d2ba3c53-f03c-4e76-b878-cf627d515ef0.png)
 
 
+## 3.2. Steal Cookies
 
+## 3.3. Protect
 
