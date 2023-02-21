@@ -3,6 +3,7 @@ from flask import g, render_template, request, Markup
 from login import requirelogin
 from zoodb import *
 from debug import *
+import bank_client
 import bank
 
 @catch_err
@@ -20,8 +21,8 @@ def users():
             args['profile'] = p_markup
 
             args['user'] = user
-            args['user_zoobars'] = bank.balance(user.username)
-            args['transfers'] = bank.get_log(user.username)
+            args['user_zoobars'] = bank_client.balance(user.username)
+            args['transfers'] = bank_client.get_log(user.username)
         else:
             args['warning'] = "Cannot find that user."
     return render_template('users.html', **args)
