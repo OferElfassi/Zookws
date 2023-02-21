@@ -1,16 +1,11 @@
-# 2.1 privilege separation
+# 2.1.1 privilege separating login service
 
-Privilege separation challenges: first, requires to take apart the application and split it up in separate
-pieces.  Second, ensure that each piece runs with minimal privileges, which
-requires setting permissions precisely and configuring the pieces correctly.
+The first step towards protecting passwords will be to create a service that deals with user passwords and cookies, so that only that service can access them directly, and the rest of the Zoobar application cannot. In particular, we want to separate the code that deals with user authentication (i.e., passwords and tokens) from the rest of the application code. The current zoobar application stores everything about the user (their profile, their zoobar balance, and authentication info) in the Person table (see zoodb.py). We want to move the authentication info out of the Person table into a separate Cred table (Cred stands for Credentials), and move the code that accesses this authentication information (i.e., auth.py) into a separate service.
 
-![image](https://user-images.githubusercontent.com/13490629/219546840-b4d3f292-1c18-4baf-8209-86a72eeaccee.png)
-
+![image](https://user-images.githubusercontent.com/13490629/220238481-f53ea767-d8d1-433c-82c9-09fad5567858.png)
 ### Part 1 - Prepare the environment
 
 * Create jail directory
-* Create virtual environment for the web server python code in the jail directory
-* Install the required python packages in the virtual environment
 * compile the c code and check for required files and directories and copy them to the jail directory
 * copy any required packages and environment variables to the jail directory
 * change the owners and permissions of the jail directory properly
@@ -23,30 +18,12 @@ make all
 sudo ./setup.sh
 ```
 
-
 ### Part 2 - Run the web server
 
-* Activate the virtual environment  
 * Run the web server loader executable zookld which is the only executable that runs with root privileges and located out of jail directory
-* then the zookld will load the web server executable zookd and zookhttp processes by attaching each process to new forked chrooted jail process
+* then the zookld will load the web server executable zookd, zookhttp and authsvc processes by attaching each process to new forked chrooted jail process
 
 ```shell
-cd jail/directory
-source venv/bin/activate
 cd project/directory
 sudo ./zookld 8080
 ```
-
-### Part 3 - Test code injection exploit
-
-* Run the web server with zookld-exstack executable which execute the http service tht compiled with executable stack (zookhttp-exstack)
-* Run the exploit-template2.py
-
-```shell
-cd jail/directory
-source venv/bin/activate
-cd project/directory
-sudo ./zookld-exstack 8080
-```
-
-![image](https://user-images.githubusercontent.com/13490629/219696223-483cc4a1-a10a-46b4-bc65-aeb796c2d1d5.png)
