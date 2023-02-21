@@ -14,7 +14,7 @@ MEDIA="$ZOOBAR/media"
 TEMPLATES="$ZOOBAR/templates"
 DB="$ZOOBAR/db"
 AUTH_SVC="$JAIL/authsvc"
-BANK_SVC="$JAIL/authsvc"
+BANK_SVC="$JAIL/banksvc"
 # Files to copy
 files=(zookd zookhttp index.html favicon.ico)
 # Database tables
@@ -150,9 +150,10 @@ else
 fi
 
 printf "[16/16] set permissions and ownerships \n"
-chmod 777 "$JAIL/authsvc"
-chmod 777 "$JAIL/zookd"
-chmod 777 "$JAIL/zookhttp"
+chmod 775 "$JAIL/banksvc"
+chmod 775 "$JAIL/authsvc"
+chmod 775 "$JAIL/zookd"
+chmod 775 "$JAIL/zookhttp"
 
 #chmod 775 "$DB" && chown 0:600 "$DB"s
 #chmod a+rwx "$AUTH_PATH"

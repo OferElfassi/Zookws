@@ -7,7 +7,7 @@ import auth
 import bank
 import random
 import auth_client
-
+import bank_client
 
 class User(object):
     def __init__(self):
@@ -46,7 +46,7 @@ class User(object):
         persondb = person_setup()
         self.person = persondb.query(Person).get(username)
         self.token = token
-        self.zoobars = bank.balance(username)
+        self.zoobars = bank_client.balance(username)
 
 
 def logged_in():

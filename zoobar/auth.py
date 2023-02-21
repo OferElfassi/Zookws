@@ -7,7 +7,7 @@ import pbkdf2
 
 import hashlib
 import random
-
+import bank_client
 SALT_LEN = 25
 
 
@@ -54,6 +54,7 @@ def register(username, password):
     db.add(newcred)
     db.commit()
     add_person(username)
+    bank_client.create_account(username)
     return newtoken(db, newcred)
 
 

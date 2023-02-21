@@ -13,7 +13,7 @@
 #define DBG_ON 1
 #define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__)
 
-#define SVC_CNT 3
+#define SVC_CNT 4
 #define SHARED_GID 1000
 #define JAIL_ROOT "/var/okws/run"
 enum svc_indexes {ZOOKD,HTTP_SVC,AUTH_SVC};
@@ -21,6 +21,7 @@ SVCS svcs[SVC_CNT] = {
         {"zookd",  "zookd",  -1, -1, -1,500,500,0,{555}},
         {"zookhttp","zookhttp",-1, -1, -1,600,600,0,{700}},
         {"authsvc/sock","zoobar/auth-server.py",-1, -1, -1,700,700,0,{600,500}},
+        {"banksvc/sock","zoobar/bank-server.py",-1, -1, -1,800,800,0,{600,500}},
 };
 
 

@@ -17,12 +17,15 @@ class Person(PersonBase):
     profile = Column(String(5000), nullable=False, default="")
 
 
+
 class Cred(CredBase):
     __tablename__ = "cred"
     username = Column(String(128), primary_key=True)
     password = Column(String(128))
     token = Column(String(128))
     salt = Column(String(128))
+
+
 
 
 class Transfer(TransferBase):
@@ -45,7 +48,6 @@ def dbsetup(name, base):
     dbdir = os.path.join(thisdir, "db", name)
     if not os.path.exists(dbdir):
         os.makedirs(dbdir)
-
     dbfile = os.path.join(dbdir, "%s.db" % name)
     engine = create_engine('sqlite:///%s' % dbfile,
                            isolation_level='SERIALIZABLE')
@@ -70,6 +72,11 @@ def bank_setup():
     return dbsetup("bank", BankBase)
 
 
+def user_exists(username):
+    person_session = person_setup()
+    return person_session.query(Person).filter(Person.username == username).first() is not None
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(("Usage: %s [init-person|init-transfer]" % sys.argv[0]))
@@ -82,5 +89,7 @@ if __name__ == "__main__":
         transfer_setup()
     elif cmd == 'init-cred':
         cred_setup()
+    elif cmd == 'init-bank':
+        bank_setup()
     else:
         raise Exception("unknown command %s" % cmd)
