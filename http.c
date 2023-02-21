@@ -299,6 +299,8 @@ void http_serve(int fd, const char *name)
             handler = http_serve_directory;
         else
             handler = http_serve_file;
+    } else{
+        printf("stat (%s) failed with error: %s\n",pn, strerror(errno));
     }
 
     handler(fd, pn);

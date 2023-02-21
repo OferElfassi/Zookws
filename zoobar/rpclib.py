@@ -7,17 +7,22 @@ from debug import *
 
 import json
 
+
 def parse_req(req):
     return json.loads(req)
+
 
 def format_req(method, kwargs):
     return json.dumps([method, kwargs])
 
+
 def parse_resp(resp):
     return json.loads(resp)
 
+
 def format_resp(resp):
     return json.dumps(resp)
+
 
 def buffered_readlines(sock):
     buf = ''
@@ -26,13 +31,14 @@ def buffered_readlines(sock):
             (line, nl, buf) = buf.partition('\n')
             yield line
         try:
-            newdata = sock.recv(4096)
+            newdata = sock.recv(4096).decode('ascii')
             if newdata == '':
                 break
             buf += newdata
         except IOError as e:
             if e.errno == errno.ECONNRESET:
                 break
+
 
 class RpcServer(object):
     def run_sock(self, sock):
@@ -41,7 +47,7 @@ class RpcServer(object):
             (method, kwargs) = parse_req(req)
             m = self.__getattribute__('rpc_' + method)
             ret = m(**kwargs)
-            sock.sendall(format_resp(ret) + '\n')
+            sock.sendall(format_resp(ret).encode('ascii') + b'\n')
 
     def run_sockpath_fork(self, sockpath):
         if os.path.exists(sockpath):
@@ -53,8 +59,10 @@ class RpcServer(object):
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(sockpath)
 
-        # Allow anyone to connect.
-        # For access control, use directory permissions.
+        st = os.stat(sockpath)
+
+        # os.chmod(sockpath, st.st_mode | stat.S_IEXEC)
+        log('server started at %s with mode %s %s' % (sockpath, st.st_mode , stat.S_IEXEC))
         os.chmod(sockpath, 0o777)
 
         server.listen(5)
@@ -71,14 +79,18 @@ class RpcServer(object):
             conn.close()
             os.waitpid(pid, 0)
 
+
 class RpcClient(object):
     def __init__(self, sock):
         self.sock = sock
         self.lines = buffered_readlines(sock)
 
     def call(self, method, **kwargs):
-        self.sock.sendall(format_req(method, kwargs) + '\n')
-        return parse_resp(self.lines.next())
+        # self.sock.sendall(format_req(method, kwargs) + b'\n')
+        self.sock.sendall(format_req(method, kwargs).encode('ascii') + b'\n')
+        res = json.loads(next(self.lines))
+        log('res: %s' % res)
+        return res
 
     def close(self):
         self.sock.close()
@@ -91,8 +103,12 @@ class RpcClient(object):
     def __exit__(self, *args):
         self.close()
 
+
 def client_connect(pathname):
+    log("Current process PWD:{0} UID: {1}, GID: {2}, GIDS: {3}".format(os.getcwd(),
+    os.getuid(), os.getgid(), os.getgroups()))
+    log('connecting to %s' % pathname)
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect(pathname)
+    log('connected to %s' % pathname)
     return RpcClient(sock)
-

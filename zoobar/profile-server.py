@@ -4,7 +4,7 @@ import rpclib
 import sys
 import os
 import sandboxlib
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hashlib
 import socket
 import bank

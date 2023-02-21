@@ -13,13 +13,14 @@
 #define DBG_ON 1
 #define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,BLUE,DBG_ON,MSG,__VA_ARGS__)
 
-#define SVC_CNT 2
+#define SVC_CNT 3
 #define SHARED_GID 1000
 #define JAIL_ROOT "/var/okws/run"
 enum svc_indexes {ZOOKD,HTTP_SVC,AUTH_SVC};
 SVCS svcs[SVC_CNT] = {
         {"zookd",  "zookd",  -1, -1, -1,500,500,0,{555}},
-        {"zookhttp","zookhttp",-1, -1, -1,600,600,0,{555}},
+        {"zookhttp","zookhttp",-1, -1, -1,600,600,0,{700}},
+        {"authsvc/sock","zoobar/auth-server.py",-1, -1, -1,700,700,0,{600,500}},
 };
 
 
@@ -40,6 +41,8 @@ int set_args(char *[], int );
 void set_groups(int);
 
 void list_files(char *dir_name);
+
+char ** get_files_array(char *dir_name);
 
 struct sigaction sa;
 
@@ -142,26 +145,22 @@ pid_t launch_svc(int svc_index) {
             return pid;
     }
     chdir(JAIL_ROOT); // change the working directory to the jail root
-    LOG("CWD: %s", getcwd(NULL, 0));
-//    chroot("."); // chroot to the jail root
-    list_files(".");
+    LOG("\nBEFORE CHROOT\tproccess:%s \tpwd:%s\t uid: %d\t gid: %d\n",svcs[svc_index].path,  getcwd(NULL, 0),getuid(), getgid());
+    chroot("."); // chroot to the jail root
     uid_t uid = svcs[svc_index].uid;
     gid_t gid = svcs[svc_index].gid;
-    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
-    setresgid(gid, gid, gid);
+    system("echo ""cccccccccccccccccccccccccccccccccccccc"" ");
+//    setresgid(gid, gid, gid);
+//    set_groups(svc_index);
+//    setresuid(uid, uid, uid);
+    setgid(gid);
     set_groups(svc_index);
-    setresuid(uid, uid, uid);
+    setuid(uid);
+    LOG("\nAFTER CHROOT\tproccess:%s \tpwd:%s\t uid: %d\t gid: %d\n files:%s\n",svcs[svc_index].path,  getcwd(NULL, 0),getuid(), getgid(),TO_STR(get_files_array("."),6));
     args_len = set_args(argv, svc_index);
-    print_cwd();
-    list_files(".");
-    printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
     LOG("execv path:%s args:%s",svcs[svc_index].path, TO_STR(argv, args_len));
     signal(SIGCHLD, SIG_DFL);
     signal(SIGPIPE, SIG_DFL);
-//    char *aaa[2];
-//    aaa[0] = "/bin/ls";
-//    aaa[1] = NULL;
-//    execv( aaa[0], aaa );
     execv(svcs[svc_index].path, argv);
     LOG_ERROR("execv %s", svcs[svc_index].path);
     return 0;
@@ -202,7 +201,10 @@ void set_groups(int svc_index){
     for (int i = 0; i < group_count; i++) {
         group_list[i] = svcs[svc_index].grps[i];
     }
-    setgroups(group_count,group_list);
+    LOG("setgroups(%d, %s) for service", group_count, TO_STR((int*)group_list, group_count), svcs[svc_index].path);
+    if(setgroups(group_count,group_list)==-1){
+        LOG_ERROR("setgroups for service %s FAILED :", svcs[svc_index].path);
+    }
 }
 
 void print_cwd(){
@@ -223,3 +225,21 @@ void list_files(char *dir_name) {
         closedir(d);
     }
 }
+
+char ** get_files_array(char *dir_name) {
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(dir_name);
+    char **files = malloc(30 * sizeof(char *));
+    int i = 0;
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            files[i] = dir->d_name;
+            i++;
+        }
+        closedir(d);
+    }
+    return files;
+
+}
+

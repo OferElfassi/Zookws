@@ -1,17 +1,17 @@
-ASFLAGS := -m64
-CFLAGS  := -m64 -g -std=c99 -Wall -Wno-format-overflow -D_GNU_SOURCE -static
+ASFLAGS :=
+CFLAGS  := -m64 -g -std=c99 -Wall -Wno-format-overflow -D_GNU_SOURCE
 LDFLAGS := -m64
 LDLIBS  :=
 PROGS   := zookd \
            zookld \
-           zookhttp \
-           zookd-exstack \
-           zookld-exstack\
-           zookhttp-exstack\
-           zookd-nxstack \
-           zookd-withssp \
-           shellcode.bin \
-           run-shellcode
+           zookhttp
+#           zookd-exstack \
+#           zookld-exstack\
+#           zookhttp-exstack\
+#           zookd-nxstack \
+#           zookd-withssp \
+#           shellcode.bin \
+#           run-shellcode
 
 ifeq ($(wildcard /usr/bin/execstack),)
   ifneq ($(wildcard /usr/sbin/execstack),)

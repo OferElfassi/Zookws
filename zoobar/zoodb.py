@@ -63,7 +63,7 @@ def cred_setup():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: %s [init-person|init-transfer]" % sys.argv[0])
+        print(("Usage: %s [init-person|init-transfer]" % sys.argv[0]))
         exit(1)
 
     cmd = sys.argv[1]

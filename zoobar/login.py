@@ -8,6 +8,7 @@ import bank
 import random
 import auth_client
 
+
 class User(object):
     def __init__(self):
         self.person = None
@@ -46,6 +47,7 @@ class User(object):
         self.token = token
         self.zoobars = bank.balance(username)
 
+
 def logged_in():
     g.user = User()
     g.user.checkCookie(request.cookies.get("PyZoobarLogin"))
@@ -54,6 +56,7 @@ def logged_in():
     else:
         return False
 
+
 def requirelogin(page):
     @wraps(page)
     def loginhelper(*args, **kwargs):
@@ -61,7 +64,9 @@ def requirelogin(page):
             return redirect(url_for('login') + "?nexturl=" + request.url)
         else:
             return page(*args, **kwargs)
+
     return loginhelper
+
 
 @catch_err
 def login():
@@ -105,6 +110,7 @@ def login():
                            nexturl=nexturl,
                            login_error=login_error,
                            login_username=Markup(request.form.get('login_username', '')))
+
 
 @catch_err
 def logout():
