@@ -1,8 +1,10 @@
-# 2.2.1 privilege separating login service
+# 2.3. privilege separating bank service
 
-The first step towards protecting passwords will be to create a service that deals with user passwords and cookies, so that only that service can access them directly, and the rest of the Zoobar application cannot. In particular, we want to separate the code that deals with user authentication (i.e., passwords and tokens) from the rest of the application code. The current zoobar application stores everything about the user (their profile, their zoobar balance, and authentication info) in the Person table (see zoodb.py). We want to move the authentication info out of the Person table into a separate Cred table (Cred stands for Credentials), and move the code that accesses this authentication information (i.e., auth.py) into a separate service.
-
-![image](https://user-images.githubusercontent.com/13490629/220238481-f53ea767-d8d1-433c-82c9-09fad5567858.png)
+To improve the security of zoobar balances, the plan is similar to operations made on the authentication service: 
+split the zoobar balance information into a separate Bank database, and set up a bank_svc service,
+whose job it is to perform operations on the new Bank database and the existing Transfer database.
+As long as only the bank_svc service can modify the Bank and Transfer database.
+![image](https://user-images.githubusercontent.com/13490629/220483589-ac36ae9f-fc2a-45eb-b907-80167cc4e4b9.png)
 ### Part 1 - Prepare the environment
 
 * Create jail directory
@@ -27,3 +29,13 @@ sudo ./setup.sh
 cd project/directory
 sudo ./zookld 8080
 ```
+<br>
+<br>
+
+#### alternative all the above steps can be done automatically by running the following command
+
+```shell
+cd project/directory
+sudo ./launch.sh 8080 1
+```
+* the second argument is indicator if we want to start fresh jail or completely delete the jail directory and start fresh
