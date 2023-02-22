@@ -143,14 +143,13 @@ pid_t launch_svc(int svc_index) {
     }
     chdir(JAIL_ROOT); // change the working directory to the jail root
     LOG("CWD: %s", getcwd(NULL, 0));
-//    chroot("."); // chroot to the jail root
+    chroot("."); // chroot to the jail root
     list_files(".");
     uid_t uid = svcs[svc_index].uid;
     gid_t gid = svcs[svc_index].gid;
     printf("\n0)\tuid: %d, gid: %d\n",  getuid(), getgid());
-    setresgid(gid, gid, gid);
-    set_groups(svc_index);
-    setresuid(uid, uid, uid);
+    setgid(gid);
+    setuid(uid);
     args_len = set_args(argv, svc_index);
     print_cwd();
     list_files(".");
@@ -158,10 +157,6 @@ pid_t launch_svc(int svc_index) {
     LOG("execv path:%s args:%s",svcs[svc_index].path, TO_STR(argv, args_len));
     signal(SIGCHLD, SIG_DFL);
     signal(SIGPIPE, SIG_DFL);
-//    char *aaa[2];
-//    aaa[0] = "/bin/ls";
-//    aaa[1] = NULL;
-//    execv( aaa[0], aaa );
     execv(svcs[svc_index].path, argv);
     LOG_ERROR("execv %s", svcs[svc_index].path);
     return 0;
