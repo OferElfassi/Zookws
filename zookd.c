@@ -95,6 +95,7 @@ static void process_client(int fd) {
     LOG("reqpath: %s", reqpath);
     if (sendfd(fds[0], env, env_len, fd) < 0)
         LOG_ERROR("ERROR sendfd socket:%d, fd:%d", sock_fd, fds[0]);
+    close(fd);
 }
 
 /**
