@@ -2,6 +2,7 @@
 #include <err.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #define DBG_ON 1
 #define DBG_COLOR CYAN
 #define LOG(...) log_msg(TIME_NOW(),__FILE__, __func__, __LINE__,DBG_COLOR,DBG_ON,MSG,__VA_ARGS__);
@@ -17,6 +18,8 @@ int main(int argc, char **argv)
         LOG_ERROR("Wrong arguments");
     fd = strToInt(argv[1]);
 
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
 
     for(;;) {
