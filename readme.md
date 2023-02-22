@@ -4,7 +4,7 @@ Privilege separation challenges: first, requires to take apart the application a
 pieces.  Second, ensure that each piece runs with minimal privileges, which
 requires setting permissions precisely and configuring the pieces correctly.
 
-![image](https://user-images.githubusercontent.com/13490629/219546840-b4d3f292-1c18-4baf-8209-86a72eeaccee.png)
+![image](https://user-images.githubusercontent.com/13490629/220488413-371caf62-1b00-4f95-8748-fa2caa153b67.png)
 
 ### Part 1 - Prepare the environment
 
