@@ -12,6 +12,6 @@ def run_profile(user):
             return c.call('run', pcode=pcode,
                                  user=user.username,
                                  visitor=g.user.person.username)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return 'Exception: ' + str(e)

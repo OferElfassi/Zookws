@@ -3,7 +3,8 @@
 {% block content %}
 <form name="profileform" method="GET">
 <span class="nobr">User:
-<input type="text" name="user" value="{{ req_user }}" size=10></span><br>
+<!--<input type="text" name="user" value="{{ req_user }}" size=10></span><br>-->
+<input type="text" name="user" value="{{ request.form.get('user', '') }}" size=10></span><br>
 <input type="submit" value="View">
 </form>
 {% if user %}

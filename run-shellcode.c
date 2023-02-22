@@ -18,7 +18,6 @@ main(int ac, char **av)
     printf("Usage: %s shellcode.bin\n", av[0]);
     exit(-1);
   }
-
   void *buf;
   int fd = open(av[1], O_RDONLY);
   if (fd < 0)
@@ -33,13 +32,14 @@ main(int ac, char **av)
     perror("malloc");
 
   ssize_t cc = read(fd, buf, st.st_size);
+  printf("st.st_size: %d\n", (int)st.st_size);
+  printf("cc size: %d\n", (int)cc);
   if (cc < 0)
     perror("read");
   if (cc != st.st_size)
     printf("incomplete read: %ld %ld\n", cc, st.st_size);
 
   close(fd);
-
   if (mprotect(buf, st.st_size, PROT_READ|PROT_WRITE|PROT_EXEC) < 0)
     perror("mprotect");
 

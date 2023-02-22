@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import rpclib
 import sys
 import os
 import sandboxlib
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hashlib
 import socket
 import bank
@@ -52,7 +52,8 @@ class ProfileAPIServer(rpclib.RpcServer):
 
 def run_profile(pcode, profile_api_client):
     globals = {'api': profile_api_client}
-    exec pcode in globals
+    exec(pcode, globals)
+
 
 class ProfileServer(rpclib.RpcServer):
     def rpc_run(self, pcode, user, visitor):
