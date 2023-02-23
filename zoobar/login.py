@@ -1,6 +1,6 @@
 from flask import g, redirect, render_template, request, url_for, Markup
 from functools import wraps
-from debug import *
+import debug
 from zoodb import *
 import time
 import auth
@@ -8,17 +8,38 @@ import bank
 import random
 import auth_client
 import bank_client
+from datetime import datetime, timedelta
+
 
 class User(object):
     def __init__(self):
+        self.zoobars = 0
+        self.token = None
         self.person = None
 
-    def checkLogin(self, username, password):
+    def checkLogin(self, username, password, blocking_duration_minutes=2, max_attempts=5):
+        now = datetime.now()
+        cred = Cred.get_by_username(username)
+        if cred is None:
+            return None
+        # Get all failed attempts that happened in the last blocking_duration_minutes minutes
+        attempts = FailedLogin.get_failed_attempts(cred, now, blocking_duration_minutes)
+        if len(attempts) >= max_attempts:  # Too many failed attempts
+            time_left = get_remaining_time(attempts, now, blocking_duration_minutes)
+            login_error = "Too many failed attempts. Try again in %s:%s" % (
+                time_left.seconds // 60, time_left.seconds % 60)
+            log(login_error)
+            return login_error
+        # Check credentials
 
         token = auth_client.login(username, password)
-        if token is not None:
+        if token is not None:  # Successful login
+            # Clear failed attempts
+            FailedLogin.delete_failed_attempts(attempts)
             return self.loginCookie(username, token)
-        else:
+        else:  # Failed login
+            FailedLogin.add_failed_attempt(cred)  # Log failure to failed attempts table
+            time.sleep(1)  # Sleep for 1 second to prevent brute force attacks
             return None
 
     def loginCookie(self, username, token):
@@ -69,6 +90,13 @@ def requirelogin(page):
     return loginhelper
 
 
+# Calculate remaining time until the blocking period ends
+def get_remaining_time(attempts, time_ref, blocking_duration_minutes):
+    blocking_end_time = attempts[-1].timestamp + timedelta(minutes=blocking_duration_minutes)
+    blocking_remaining_time = blocking_end_time - time_ref
+    return blocking_remaining_time
+
+
 @catch_err
 def login():
     cookie = None
@@ -97,6 +125,9 @@ def login():
                 cookie = user.checkLogin(username, password)
                 if not cookie:
                     login_error = "Invalid username or password."
+                elif "Too many failed attempts" in cookie:
+                    login_error = cookie
+                    cookie = None
 
     nexturl = request.values.get('nexturl', url_for('index'))
     if cookie:
@@ -120,5 +151,3 @@ def logout():
     response = redirect(url_for('login'))
     response.set_cookie('PyZoobarLogin', '')
     return response
-
-

@@ -18,7 +18,7 @@ BANK_SVC="$JAIL/banksvc"
 # Files to copy
 files=(zookd zookhttp index.html favicon.ico)
 # Database tables
-db_tables=(person transfer cred bank)
+db_tables=(person transfer cred bank failed_logins)
 # Services
 svcs=(authsvc banksvc)
 

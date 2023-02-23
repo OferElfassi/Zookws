@@ -92,7 +92,7 @@ static void process_client(int fd) {
     const char *errmsg;
     if ((errmsg = http_request_line(fd, reqpath, env, &env_len)))
         return http_err(fd, 500, "http_request_line: %s", errmsg);
-    LOG("reqpath: %s", reqpath);
+//    LOG("reqpath: %s", reqpath);
     if (sendfd(fds[0], env, env_len, fd) < 0)
         LOG_ERROR("ERROR sendfd socket:%d, fd:%d", sock_fd, fds[0]);
     close(fd);

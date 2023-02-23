@@ -62,7 +62,7 @@ class RpcServer(object):
         st = os.stat(sockpath)
 
         # os.chmod(sockpath, st.st_mode | stat.S_IEXEC)
-        log('server started at %s with mode %s %s' % (sockpath, st.st_mode , stat.S_IEXEC))
+        # log('server started at %s with mode %s %s' % (sockpath, st.st_mode , stat.S_IEXEC))
         os.chmod(sockpath, 0o777)
 
         server.listen(5)
@@ -89,7 +89,7 @@ class RpcClient(object):
         # self.sock.sendall(format_req(method, kwargs) + b'\n')
         self.sock.sendall(format_req(method, kwargs).encode('ascii') + b'\n')
         res = json.loads(next(self.lines))
-        log('res: %s' % res)
+        # log('res: %s' % res)
         return res
 
     def close(self):
@@ -105,10 +105,8 @@ class RpcClient(object):
 
 
 def client_connect(pathname):
-    log("Current process PWD:{0} UID: {1}, GID: {2}, GIDS: {3}".format(os.getcwd(),
-    os.getuid(), os.getgid(), os.getgroups()))
-    log('connecting to %s' % pathname)
+    # log("Current process PWD:{0} UID: {1}, GID: {2}, GIDS: {3}".format(os.getcwd(),
+    # os.getuid(), os.getgid(), os.getgroups()))
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect(pathname)
-    log('connected to %s' % pathname)
     return RpcClient(sock)

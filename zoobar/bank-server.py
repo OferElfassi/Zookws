@@ -35,6 +35,8 @@ class BankRpcServer(rpclib.RpcServer):
 
 
 (_, dummy_zookld_fd, sockpath) = sys.argv
+print(("Bank server starting up on %s and zookld fd %s" % (sockpath, dummy_zookld_fd)))
+
 
 s = BankRpcServer()
 s.run_sockpath_fork(sockpath)
