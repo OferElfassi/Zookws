@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TO="ofer2212@gmail.com"
+TO="***"
 SUBJECT="Test email"
 BODY="Cookie value is: $1"
 
